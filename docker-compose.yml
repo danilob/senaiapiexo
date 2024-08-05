@@ -1,0 +1,53 @@
+version: '3'
+services:
+  
+  mssql:
+    container_name: mssql
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=ExoProjeto#001
+      - MSSQL_DB=ExoAPI
+      - MSSQL_USER=SA
+      - MSQL_PID=Express
+      - MSSQL_PASSWORD=ExoProjeto#001
+      - MSSQL_DB_AUDIT_LOG=events_service_audit_log
+    cap_add:
+      - SYS_PTRACE  
+    ports:
+      - "1433:1433"
+    volumes:
+      - .database/:/var/opt/mssql/data
+
+    networks:
+      - db_net
+
+  sqlcmd:
+    container_name: sqlcmd
+    image: mcr.microsoft.com/mssql-tools:latest
+    stdin_open: true
+    volumes:
+      - ./mssql_scripts:/opt/mssql_scripts
+    networks:
+      - db_net
+
+  web:
+    container_name: app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/app
+    depends_on:
+      - mssql
+
+    networks:
+      - db_net
+
+  
+networks:
+  db_net:
+    name: db_net
+    driver: bridge
